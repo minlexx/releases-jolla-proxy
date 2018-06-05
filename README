@@ -1,0 +1,15 @@
+= install: =
+python3 -m pip install --user -r requirements.txt
+or
+python3 -m pip install --user requests
+
+= run: =
+python3 main.py BIND_ADDRESS BIND_PORT HTTP_PROXY_SPEC
+
+where HTTP_PROXY_SPEC is in form: http://user:pass@host:port
+
+example:
+sudo python3 main.py 127.0.0.1 80 http://localhost:3128
+
+(sudo is required to listen on privilieged port 80)
+
