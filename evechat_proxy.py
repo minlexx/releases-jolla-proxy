@@ -26,8 +26,11 @@ class RedirectorServerHandler(socketserver.BaseRequestHandler):
     def handle(self):
         # print('handle(), request: ', type(self.request))
         # self.request is a client socket object
+        self.client_address = self.request.getpeername()
         print('handle new client: {}'.format(self.request.getpeername()))
         self.selector.register(self.request, selectors.EVENT_READ)
+        bytes_total = 0
+        current_mb = 0
         try:
             while True:
                 # ret = select.select([self.out_socket], None, None)
@@ -45,11 +48,29 @@ class RedirectorServerHandler(socketserver.BaseRequestHandler):
                     if events_mask & selectors.EVENT_READ:
                         buf = ready_socket.recv(4096)
                         other_socket.send(buf)
-                        print('    resent {} bytes {}'.format(len(buf), deststr))
+                        # debug
+                        sbuf = buf.decode('utf-8')
+                        print(sbuf)
+                        # stats
+                        bytes_total += len(buf)
+                        current_mb += len(buf)
+                        if current_mb > 1024 * 1024:  # report data size every 1 Mb
+                            mbs_sent = bytes_total / 1024 / 1024
+                            print('    Client {}: MBytes sent: {}'.format(self.client_address, mbs_sent))
+                            current_mb = 0
         except OSError as e:
             print(e)
-        self.selector.unregister(self.out_socket)
-        self.selector.unregister(self.request)
+        # close all proxy sockets
+        try:
+            self.selector.unregister(self.out_socket)
+            self.selector.unregister(self.request)
+            self.request.shutdown(socket.SHUT_WR)
+            self.request.close()
+            self.out_socket.shutdown(socket.SHUT_WR)
+            self.out_socket.close()
+        except OSError:
+            pass
+        print('Client finished: {}, bytes sent: {}'.format(self.client_address, bytes_total))
 
 
 class RedirectorServer(socketserver.ThreadingTCPServer):
