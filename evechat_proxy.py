@@ -15,9 +15,11 @@ class RedirectorServerHandler(socketserver.BaseRequestHandler):
     def setup(self):
         self.selector = selectors.DefaultSelector()
         try:
+            print('Connecting to chat server... ', end='')
             # self.out_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
-            self.out_socket = socket.create_connection(('tranquility.chat.eveonline.com', 5222), 0)
+            self.out_socket = socket.create_connection(('tranquility.chat.eveonline.com', 5222), 20)
             self.selector.register(self.out_socket, selectors.EVENT_READ | selectors.EVENT_WRITE)
+            print('Connected.')
         except OSError as e:
             print(e)
 
