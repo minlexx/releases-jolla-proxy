@@ -49,8 +49,8 @@ class RedirectorServerHandler(socketserver.BaseRequestHandler):
                         buf = ready_socket.recv(4096)
                         other_socket.send(buf)
                         # debug
-                        sbuf = buf.decode('utf-8')
-                        print(sbuf)
+                        # sbuf = buf.decode('utf-8')
+                        print(buf)
                         # stats
                         bytes_total += len(buf)
                         current_mb += len(buf)
