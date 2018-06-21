@@ -50,7 +50,8 @@ class RedirectorServerHandler(socketserver.BaseRequestHandler):
                         other_socket.send(buf)
                         # debug
                         # sbuf = buf.decode('utf-8')
-                        print(buf)
+                        # print(buf) # actually data is encrypted using TLS
+                        #   (StartTLS jabber extension.)
                         # stats
                         bytes_total += len(buf)
                         current_mb += len(buf)
