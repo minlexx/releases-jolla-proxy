@@ -28,7 +28,8 @@ class RedirectorServerHandler(socketserver.BaseRequestHandler):
         # self.request is a client socket object
         self.client_address = self.request.getpeername()
         print('handle new client: {}'.format(self.request.getpeername()), file=sys.stderr)
-        self.request.settimeout(None)  # blocking mode
+        # self.request.settimeout(None)  # blocking mode
+        self.request.settimeout(15)  # 15s
         self.selector.register(self.request, selectors.EVENT_READ)
         bytes_total = 0
         current_mb = 0
