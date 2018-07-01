@@ -35,7 +35,7 @@ class RedirectorServerHandler(socketserver.BaseRequestHandler):
             while True:
                 # ret = select.select([self.out_socket], None, None)
                 # ret = self.selector.select(1)
-                ret = self.selector.select()
+                ret = self.selector.select(5)
                 # print('selector ret', ret)
                 for key, events_mask in ret:
                     ready_socket = key.fileobj
