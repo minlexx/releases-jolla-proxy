@@ -28,6 +28,7 @@ class RedirectorServerHandler(socketserver.BaseRequestHandler):
         # self.request is a client socket object
         self.client_address = self.request.getpeername()
         print('handle new client: {}'.format(self.request.getpeername()), file=sys.stderr)
+        self.request.settimeout(None)  # blocking mode
         self.selector.register(self.request, selectors.EVENT_READ)
         bytes_total = 0
         current_mb = 0
@@ -36,7 +37,7 @@ class RedirectorServerHandler(socketserver.BaseRequestHandler):
                 # ret = select.select([self.out_socket], None, None)
                 # ret = self.selector.select(1)
                 ret = self.selector.select(5)
-                # print('selector ret', ret)
+                print('    selector ret', ret)
                 for key, events_mask in ret:
                     ready_socket = key.fileobj
                     deststr = 'to chat'
