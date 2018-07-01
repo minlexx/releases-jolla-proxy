@@ -27,7 +27,7 @@ class RedirectorServerHandler(socketserver.BaseRequestHandler):
         # print('handle(), request: ', type(self.request))
         # self.request is a client socket object
         self.client_address = self.request.getpeername()
-        print('handle new client: {}'.format(self.request.getpeername()))
+        print('handle new client: {}'.format(self.request.getpeername()), file=sys.stderr)
         self.selector.register(self.request, selectors.EVENT_READ)
         bytes_total = 0
         current_mb = 0
@@ -60,18 +60,19 @@ class RedirectorServerHandler(socketserver.BaseRequestHandler):
                             print('    Client {}: MBytes sent: {}'.format(self.client_address, mbs_sent))
                             current_mb = 0
         except OSError as e:
-            print(e)
+            print(e, file=sys.stderr)
         # close all proxy sockets
         try:
             self.selector.unregister(self.out_socket)
             self.selector.unregister(self.request)
-            self.request.shutdown(socket.SHUT_WR)
+            self.request.shutdown(socket.SHUT_RDWR)
             self.request.close()
-            self.out_socket.shutdown(socket.SHUT_WR)
+            self.out_socket.shutdown(socket.SHUT_RDWR)
             self.out_socket.close()
         except OSError:
             pass
-        print('Client finished: {}, bytes sent: {}'.format(self.client_address, bytes_total))
+        print('Client finished: {}, bytes sent: {}'.format(self.client_address, bytes_total),
+              file=sys.stderr)
 
 
 class RedirectorServer(socketserver.ThreadingTCPServer):
@@ -85,7 +86,7 @@ class RedirectorServer(socketserver.ThreadingTCPServer):
 def main():
     # server_address = (sys.argv[1], int(sys.argv[2]))
     server_address = ('0.0.0.0', 5222)
-    print('Will listen on', server_address)
+    print('Will listen on', server_address, file=sys.stderr)
     srv = RedirectorServer(server_address)
     try:
         srv.serve_forever()
