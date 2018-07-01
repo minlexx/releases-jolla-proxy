@@ -18,7 +18,7 @@ class RedirectorServerHandler(socketserver.BaseRequestHandler):
             print('Connecting to chat server... ', end='')
             # self.out_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
             self.out_socket = socket.create_connection(('tranquility.chat.eveonline.com', 5222), 20)
-            self.selector.register(self.out_socket, selectors.EVENT_READ | selectors.EVENT_WRITE)
+            self.selector.register(self.out_socket, selectors.EVENT_READ)
             print('Connected.')
         except OSError as e:
             print(e)
@@ -28,16 +28,16 @@ class RedirectorServerHandler(socketserver.BaseRequestHandler):
         # self.request is a client socket object
         self.client_address = self.request.getpeername()
         print('handle new client: {}'.format(self.request.getpeername()), file=sys.stderr)
-        # self.request.settimeout(None)  # blocking mode
-        self.request.settimeout(15)  # 15s
+        self.request.settimeout(None)  # blocking mode
+        # self.request.settimeout(15)  # 15s
         self.selector.register(self.request, selectors.EVENT_READ)
         bytes_total = 0
         current_mb = 0
         try:
             while True:
                 # ret = select.select([self.out_socket], None, None)
-                # ret = self.selector.select(1)
-                ret = self.selector.select(5)
+                ret = self.selector.select(1)
+                # ret = self.selector.select()
                 print('    selector ret', ret)
                 for key, events_mask in ret:
                     ready_socket = key.fileobj
