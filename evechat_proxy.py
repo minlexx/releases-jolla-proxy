@@ -10,24 +10,35 @@ import socketserver
 
 # Could not connect to chat server at tranquility.chat.eveonline.com:5222.
 # Please ensure that this port isn't blocked.Retry?
+# Newer address: tq.chat.eveonline.com:5222
+
+g_num_threads = 0
+
 
 class RedirectorServerHandler(socketserver.BaseRequestHandler):
     def setup(self):
         self.selector = selectors.DefaultSelector()
         try:
-            print('Connecting to chat server... ', end='')
+            print('RedirectorServerHandler.setup: Connecting to chat server... ', end='', file=sys.stderr)
             # self.out_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
-            self.out_socket = socket.create_connection(('tranquility.chat.eveonline.com', 5222), 20)
+            # self.out_socket = socket.create_connection(('tranquility.chat.eveonline.com', 5222), 20)
+            self.out_socket = socket.create_connection(('tq.chat.eveonline.com', 5222), 20)
             self.selector.register(self.out_socket, selectors.EVENT_READ)
             print('Connected.')
         except OSError as e:
-            print(e)
+            print('OSError: {}'.format(e), file=sys.stderr)
+            print('RedirectorServerHandler.setup: got OSError ^^', file=sys.stderr)
 
     def handle(self):
         # print('handle(), request: ', type(self.request))
         # self.request is a client socket object
+        global g_num_threads
+        g_num_threads += 1
+        my_thread_num = g_num_threads
         self.client_address = self.request.getpeername()
-        print('handle new client: {}'.format(self.request.getpeername()), file=sys.stderr)
+        print('{} RedirectorServerHandler.handle: new client: {}'.format(
+            my_thread_num, self.request.getpeername()),
+            file=sys.stderr)
         self.request.settimeout(None)  # blocking mode
         # self.request.settimeout(15)  # 15s
         self.selector.register(self.request, selectors.EVENT_READ)
@@ -58,10 +69,13 @@ class RedirectorServerHandler(socketserver.BaseRequestHandler):
                         current_mb += len(buf)
                         if current_mb > 1024 * 1024:  # report data size every 1 Mb
                             mbs_sent = bytes_total / 1024 / 1024
-                            print('    Client {}: MBytes sent: {}'.format(self.client_address, mbs_sent))
+                            print('   {} Client {}: MBytes sent: {}'.format(
+                                my_thread_num, self.client_address, mbs_sent),
+                                file=sys.stderr)
                             current_mb = 0
         except OSError as e:
-            print(e, file=sys.stderr)
+            print('{} RedirectorServerHandler.handle: OSError: {}'.format(my_thread_num, e),
+                  file=sys.stderr)
         # close all proxy sockets
         try:
             self.selector.unregister(self.out_socket)
@@ -72,8 +86,10 @@ class RedirectorServerHandler(socketserver.BaseRequestHandler):
             self.out_socket.close()
         except OSError:
             pass
-        print('Client finished: {}, bytes sent: {}'.format(self.client_address, bytes_total),
-              file=sys.stderr)
+        print('{} RedirectorServerHandler.handle: Client finished: {}, bytes sent: {}'.format(
+            my_thread_num, self.client_address, bytes_total),
+            file=sys.stderr)
+        g_num_threads -= 1
 
 
 class RedirectorServer(socketserver.ThreadingTCPServer):
@@ -87,7 +103,7 @@ class RedirectorServer(socketserver.ThreadingTCPServer):
 def main():
     # server_address = (sys.argv[1], int(sys.argv[2]))
     server_address = ('0.0.0.0', 5222)
-    print('Will listen on', server_address, file=sys.stderr)
+    print('Will listen on: ', server_address, file=sys.stderr)
     srv = RedirectorServer(server_address)
     try:
         srv.serve_forever()
